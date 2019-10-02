@@ -167,6 +167,7 @@ struct smbchg_chip {
 	struct ilim_map			wipower_pt;
 	struct ilim_map			wipower_div2;
 	struct qpnp_vadc_chip		*vadc_dev;
+	struct qpnp_vadc_chip           *usb_tm_dev;
 	bool				wipower_dyn_icl_avail;
 	struct ilim_entry		current_ilim;
 	struct mutex			wipower_config;
@@ -6926,6 +6927,8 @@ static void update_typec_otg_status(struct smbchg_chip *chip, int mode,
 //	return adc_result.physical;
 //}
 
+extern void letv_pd_set_typec_temperature(int temp);
+
 /*
  * Function to read Type-C temp
  */
@@ -7029,17 +7032,16 @@ static int smbchg_usb_get_property(struct power_supply *psy,
                 val->intval = chip->usb_health;
                 break;
        case POWER_SUPPLY_PROP_VOLTAGE_NOW:
-               val->intval = get_prop_usbin_voltage_now(chip);
-               break;
+		val->intval = get_prop_usbin_voltage_now(chip);
+		//val->intval = smbchg_get_vusb(chip);
+                break;
 #ifdef CONFIG_VENDOR_LEECO
          case POWER_SUPPLY_PROP_LE_USBIN_TEMP:
                 val->intval = get_prop_usbin_temp_now(chip);
-                val->intval = get_prop_usbin_temp_now(mdwc);
-                 break;
+                break;
          case POWER_SUPPLY_PROP_LE_VPH_VOLTAGE:
                 val->intval = get_prop_vph_pwr_now(chip);
-                val->intval = get_prop_vph_pwr_now(mdwc);
-                 break;
+                break;
 #endif
 	default:
 		return -EINVAL;
@@ -8382,14 +8384,17 @@ static irqreturn_t usbid_change_handler(int irq, void *_chip)
 		if (rid_sts == RID_GROUND) {
 			pr_info("OTG detected\n");
 			msleep(20);
-			power_supply_set_usb_otg(chip->usb_psy, 1);
+                        extcon_set_cable_state_(chip->extcon, EXTCON_USB_HOST, otg_present);
+			//power_supply_set_usb_otg(chip->usb_psy, 1);
 		} else if (rid_sts == RID_MHL) {
 			mhl_insert_flag = 1;
 			mhl_state_uevent(R_MHL, 0);
 			pr_info("MHL detected\n");
 		} else if (rid_sts == RID_FLOAT) {
 			pr_info("plug out detected\n");
-			power_supply_set_usb_otg(chip->usb_psy, 0);
+                        extcon_set_cable_state_(chip->extcon, EXTCON_USB_HOST, false);
+                        extcon_set_cable_state_(chip->extcon, EXTCON_USB, true);
+			//power_supply_set_usb_otg(chip->usb_psy, 0);
 		} else
 			pr_err("unknow rid state\n");
 	} else {
@@ -8398,10 +8403,12 @@ static irqreturn_t usbid_change_handler(int irq, void *_chip)
 			mhl_insert_flag = 1;
 		if (chip->usb_psy) {
 			otg_present = (dw3_id_state == RID_GROUND);
-			power_supply_set_usb_otg(chip->usb_psy,
-						otg_present ? 1 : 0);
+			extcon_set_cable_state_(chip->extcon, EXTCON_USB_HOST, otg_present);
+			//power_supply_set_usb_otg(chip->usb_psy,
+			//			otg_present ? 1 : 0);
 		}
 	}
+
 #else
 	otg_present = is_otg_present(chip);
 	pr_smb(PR_MISC, "setting usb psy OTG = %d\n",
@@ -10408,7 +10415,7 @@ static int smbchg_probe(struct platform_device *pdev)
 		goto votables_cleanup;
 	}
 #ifdef CONFIG_QPNP_MHL
-	rc = of_property_read_u32(spmi->dev.of_node,
+	rc = of_property_read_u32(pdev->dev.of_node,
 					"qcom,mhl-wihd", &(chip->mhl_wihd));
 	if (rc) {
 		chip->mhl_wihd = 0;
