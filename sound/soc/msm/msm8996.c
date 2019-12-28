@@ -69,13 +69,13 @@
 #endif
 
 #ifdef CONFIG_VENDOR_LEECO
-static bool usb_typec_letv;
-static bool usb_typec_pid;
-extern void cclogic_set_audio_mode(bool mode);
-extern void usb_audio_if_letv(bool *letv, int *pid);
-static int usb_typec_swap = -1;
+//static bool usb_typec_letv;
+//static bool usb_typec_pid;
+//extern void cclogic_set_audio_mode(bool mode);
+//extern void usb_audio_if_letv(bool *letv, int *pid);
+//static int usb_typec_swap = -1;
 unsigned int voice_call_state = 0;
-bool typec_set_cc_state = false;
+//bool typec_set_cc_state = false;
 #endif
 
 static int slim0_rx_sample_rate = SAMPLING_RATE_48KHZ;
@@ -668,7 +668,7 @@ static struct wcd_mbhc_config wcd_mbhc_cfg = {
 #ifdef CONFIG_VENDOR_LEECO
 atomic_t tert_mi2s_rsc_ref;
 static u32 tert_ext_mclk_rate = 0;
-
+/*
 static int usb_typec_swap_parm_set(const char *val, struct kernel_param *kp)
 {
         param_set_int(val, kp);
@@ -694,7 +694,7 @@ static int usb_typec_swap_parm_set(const char *val, struct kernel_param *kp)
 }
 module_param_call(usb_typec_swap, usb_typec_swap_parm_set,
                 param_get_int, &usb_typec_swap, 0664);
-
+*/
 #endif
 
 static inline int param_is_mask(int p)
@@ -6775,8 +6775,8 @@ static const struct snd_kcontrol_new msm_snd_controls[] = {
                         msm_quat_mi2s_rx_ch_get, msm_quat_mi2s_rx_ch_put),
         SOC_ENUM_EXT("QUAT_MI2S_TX Channels", msm8996_mi2s_snd_enum[9],
                         msm_quat_mi2s_tx_ch_get, msm_quat_mi2s_tx_ch_put),
-        SOC_SINGLE_EXT("USB type-c Switch", SND_SOC_NOPM, 0, 0, 0,
-                        usb_headset_analog_digital_get, usb_headset_analog_digital_set),
+//        SOC_SINGLE_EXT("USB type-c Switch", SND_SOC_NOPM, 0, 0, 0,
+//                        usb_headset_analog_digital_get, usb_headset_analog_digital_set),
         SOC_ENUM_EXT("VOICE_CALL State", msm8996_mi2s_snd_enum[10],
                         voice_call_state_get, voice_call_state_set),
 #endif
@@ -10694,8 +10694,8 @@ static int msm8996_asoc_machine_probe(struct platform_device *pdev)
 		dev_info(&pdev->dev, "msm8996_prepare_us_euro failed (%d)\n",
 			ret);
 #ifdef CONFIG_VENDOR_LEECO
-        usb_typec_letv = false;
-        usb_typec_pid = 0;
+//        usb_typec_letv = false;
+//        usb_typec_pid = 0;
 #endif
 	return 0;
 err:
